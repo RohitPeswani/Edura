@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import connectDB from "./database/db.js";
+import courseRoute from "./routes/course.route.js";
 
 
 dotenv.config({});
@@ -19,6 +20,9 @@ app.use(cookieParser());
 
 app.use(cors());
  
+// apis
+
+app.use("/api/v1/course", courseRoute);
 
  
  
