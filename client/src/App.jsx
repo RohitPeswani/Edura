@@ -10,10 +10,7 @@ import SearchPage from "./pages/student/SearchPage";
 import CourseDetail from "./pages/student/CourseDetail";
 import CourseProgress from "./pages/student/CourseProgress";
 import { ThemeProvider } from "./context/ThemeContext";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import AuthenticatedUser from "./components/auth/AuthenticatedUser";
-
-
+import {AuthenticatedUser, ProtectedRoute} from "./components/ProtectedRoutes";
 import MainLayout from "./layout/MainLayout";
 
 const appRouter = createBrowserRouter([
