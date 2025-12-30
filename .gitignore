@@ -1,0 +1,109 @@
+# ==========================
+# Dependencies
+# ==========================
+node_modules/
+**/node_modules/
+
+# ==========================
+# Environment Variables
+# ==========================
+.env
+.env.*
+!.env.example
+
+# ==========================
+# Logs
+# ==========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================
+# Build Output
+# ==========================
+dist/
+build/
+out/
+coverage/
+.next/
+
+# Vite
+client/dist/
+
+# ==========================
+# Cache
+# ==========================
+.cache/
+.parcel-cache/
+.eslintcache
+.vite/
+*.tsbuildinfo
+
+# ==========================
+# Operating System Files
+# ==========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================
+# IDE / Editor
+# ==========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==========================
+# Runtime Files
+# ==========================
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ==========================
+# Temporary Files
+# ==========================
+tmp/
+temp/
+
+# ==========================
+# Testing
+# ==========================
+.nyc_output/
+
+# ==========================
+# Package Managers
+# ==========================
+.pnpm-store/
+.npm/
+.yarn/
+.yarn/cache/
+.yarn/unplugged/
+
+# ==========================
+# Optional Uploads
+# ==========================
+uploads/
+public/uploads/
+
+# ==========================
+# Docker
+# ==========================
+*.tar
+
+# ==========================
+# Local Database
+# ==========================
+*.sqlite
+*.sqlite3
+
+# ==========================
+# Misc
+# ==========================
+.vercel/
+.render/
