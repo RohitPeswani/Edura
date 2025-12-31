@@ -10,7 +10,6 @@ Edura is a modern, responsive, and secure Learning Management System (LMS) desig
 [![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)](https://cloudinary.com/)
 [![Razorpay](https://img.shields.io/badge/Razorpay-0B72E7?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 ---
 
@@ -81,35 +80,7 @@ Unlike legacy education portals that experience latency spikes and disconnected 
 
 Edura relies on a separated client-server architecture. The frontend React application triggers API calls through RTK Query slices, which map to modular controllers on the Express server.
 
-```mermaid
-graph TD
-    subgraph Client [Client Application (React + Vite)]
-        Student[Student View]
-        Instructor[Instructor Dashboard]
-        RTK[Redux Toolkit & RTK Query]
-    end
 
-    subgraph Server [Backend Service (Express.js)]
-        API[Express Router]
-        Auth[Auth Middleware (JWT Cookie)]
-        Ctrl[Controllers]
-    end
-
-    subgraph External [Cloud & Database]
-        DB[(MongoDB / Mongoose)]
-        Cloud[Cloudinary CDN]
-        Pay[Razorpay Payment Gateway]
-    end
-
-    Student --> RTK
-    Instructor --> RTK
-    RTK -->|HTTP Requests| API
-    API --> Auth
-    Auth --> Ctrl
-    Ctrl --> DB
-    Ctrl -->|Upload/Delete Assets| Cloud
-    Ctrl -->|Process Checkout & HMAC| Pay
-```
 
 ---
 
@@ -141,6 +112,7 @@ Edura/
 ├── .gitignore
 └── README.md
 ```
+![Architecture Diagram](screenshots\LMS_Archituecture.png)
 
 ---
 
@@ -154,7 +126,7 @@ Edura/
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/<!-- Replace with your GitHub Username -->/Edura.git
+git clone https://github.com/RohitPeswani/Edura.git
 cd Edura
 ```
 
@@ -211,23 +183,17 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 RAZORPAY_KEY_ID=rzp_test_your_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 ```
-
-> [!WARNING]
-> Never commit your `.env` files to git repositories. Ensure `.gitignore` covers local variables.
-
 ---
 
 ## 📸 Screenshots
 
-*To be updated post-deployment*
-
 | User Dashboard | Admin Analytics |
 | :---: | :---: |
-| ![Dashboard Placeholder](https://via.placeholder.com/600x350?text=Student+Dashboard+Screenshot) | ![Analytics Placeholder](https://via.placeholder.com/600x350?text=Admin+Analytics+Dashboard) |
+| ![Dashboard Placeholder](screenshots\student-dashboard.jpg) | ![Analytics Placeholder](screenshots\Admin-analytics.jpg) |
 
 | Course Details | Video Player & Progress |
 | :---: | :---: |
-| ![Details Placeholder](https://via.placeholder.com/600x350?text=Course+Details+View) | ![Progress Placeholder](https://via.placeholder.com/600x350?text=Video+Player+%26+Interactive+Progress) |
+| ![Details Placeholder](hscreenshots\course-details.jpg) | ![Progress Placeholder](screenshots\video-progress.jpg) |
 
 ---
 
@@ -300,18 +266,6 @@ RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 
 ---
 
-## 🌐 Deployment
-
-### Frontend
-Deployed via Vercel / Netlify:
-* Live Client URL: `https://<!-- Replace with your Live URL -->.vercel.app`
-
-### Backend
-Deployed via Render / Railway:
-* Production API URL: `https://<!-- Replace with your API URL -->.onrender.com`
-
----
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow these steps to contribute:
@@ -323,16 +277,7 @@ Contributions are welcome! Please follow these steps to contribute:
 
 ---
 
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
 ## 👤 Author
 
 * **Rohit**
-* Email: [rohitpeswani35@gmail.com](mailto:rohitpeswani35@gmail.com)
-* GitHub: [@<!-- Replace with your GitHub Username -->](https://github.com/<!-- Replace with your GitHub Username -->)
-* LinkedIn: [<!-- Replace with your LinkedIn Profile Link -->](https://linkedin.com/in/<!-- Replace with your LinkedIn Profile Link -->)
-* Portfolio: [<!-- Replace with your Portfolio Link -->](https://<!-- Replace with your Portfolio Link -->)
+* Email: [rohitpeswani35@gmail.com](mailto:rohitpeswani28@gmail.com)
