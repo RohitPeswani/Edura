@@ -26,12 +26,19 @@ import {
 } from "@/features/api/courseApi";
 import { Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { saveFormDraft, clearFormDraft } from "@/features/courseSlice";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 const CourseTab = () => {
   
-  const [input, setInput] = useState({
+  const params = useParams();
+  const courseId = params.courseId;
+  const dispatch = useDispatch();
+  const draftForm = useSelector((state) => state.courseDrafts?.formDrafts?.[courseId]);
+
+  const [input, setInput] = useState(draftForm || {
     courseTitle: "",
     subTitle: "",
     description: "",
@@ -41,34 +48,50 @@ const CourseTab = () => {
     courseThumbnail: "",
   });
 
-  const params = useParams();
-  const courseId = params.courseId;
   const { data: courseByIdData, isLoading: courseByIdLoading , refetch} =
     useGetCourseByIdQuery(courseId);
 
-    const [publishCourse, {}] = usePublishCourseMutation();
-    const [removeCourse, { isLoading: removeLoading }] = useRemoveCourseMutation();
+  const [publishCourse, {}] = usePublishCourseMutation();
+  const [removeCourse, { isLoading: removeLoading }] = useRemoveCourseMutation();
  
   useEffect(() => {
     if (courseByIdData?.course) { 
-        const course = courseByIdData?.course;
-      setInput({
-        courseTitle: course.courseTitle,
-        subTitle: course.subTitle,
-        description: course.description,
-        category: course.category,
-        courseLevel: course.courseLevel,
-        coursePrice: course.coursePrice,
-        courseThumbnail: "",
-      });
+      const course = courseByIdData.course;
+      if (!draftForm) {
+        setInput({
+          courseTitle: course.courseTitle || "",
+          subTitle: course.subTitle || "",
+          description: course.description || "",
+          category: course.category || "",
+          courseLevel: course.courseLevel || "",
+          coursePrice: course.coursePrice || "",
+          courseThumbnail: "",
+        });
+      }
     }
-  }, [courseByIdData]);
+  }, [courseByIdData, draftForm]);
+
+  // Dynamically save the input draft state to Redux on change
+  useEffect(() => {
+    dispatch(saveFormDraft({ courseId, input }));
+  }, [input, courseId, dispatch]);
 
   const [previewThumbnail, setPreviewThumbnail] = useState("");
+
+  // Read or restore preview thumbnail from File object or URL
+  useEffect(() => {
+    if (input.courseThumbnail && input.courseThumbnail instanceof File) {
+      const fileReader = new FileReader();
+      fileReader.onloadend = () => setPreviewThumbnail(fileReader.result);
+      fileReader.readAsDataURL(input.courseThumbnail);
+    } else if (courseByIdData?.course?.courseThumbnail) {
+      setPreviewThumbnail(courseByIdData.course.courseThumbnail);
+    }
+  }, [input.courseThumbnail, courseByIdData]);
+
   const navigate = useNavigate();
 
-  const [editCourse, { data, isLoading, isSuccess, error }] =
-    useEditCourseMutation();
+  const [editCourse, { data, isLoading, isSuccess, error }] = useEditCourseMutation();
 
   const changeEventHandler = (e) => {
     const { name, value } = e.target;
@@ -129,12 +152,13 @@ const CourseTab = () => {
 
   useEffect(() => {
     if (isSuccess) {
-      toast.success(data.message || "Course update.");
+      toast.success(data?.message || "Course updated.");
+      dispatch(clearFormDraft({ courseId }));
     }
     if (error) {
       toast.error(error.data.message || "Failed to update course");
     }
-  }, [isSuccess, error]);
+  }, [isSuccess, error, courseId, data, dispatch]);
 
   if(courseByIdLoading) return <h1>Loading...</h1>
  
@@ -270,7 +294,10 @@ const CourseTab = () => {
             )}
           </div>
           <div>
-            <Button onClick={() => navigate("/admin/course")} variant="outline">
+            <Button onClick={() => {
+              dispatch(clearFormDraft({ courseId }));
+              navigate("/admin/course");
+            }} variant="outline">
               Cancel
             </Button>
             <Button disabled={isLoading} onClick={updateCourseHandler}>

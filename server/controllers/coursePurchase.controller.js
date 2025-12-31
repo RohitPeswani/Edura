@@ -18,6 +18,19 @@ export const createCheckoutSession = async (req, res) => {
     const course = await Course.findById(courseId);
     if (!course) return res.status(404).json({ message: "Course not found!" });
 
+    // Validate if the user already purchased this course
+    const existingPurchase = await CoursePurchase.findOne({
+      courseId,
+      userId,
+      status: "completed",
+    });
+    if (existingPurchase) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already purchased this course.",
+      });
+    }
+
     // Create a new course purchase record
     const newPurchase = new CoursePurchase({
       courseId,

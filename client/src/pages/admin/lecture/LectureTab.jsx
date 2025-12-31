@@ -97,8 +97,8 @@ const LectureTab = () => {
   };
 
   const removeLectureHandler = async () => {
-    await removeLecture(lectureId);
-  }
+    await removeLecture({ lectureId, courseId });
+  };
 
   useEffect(() => {
     if (isSuccess) {

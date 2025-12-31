@@ -8,7 +8,7 @@ import {
   useUpdateLectureProgressMutation,
 } from "@/features/api/courseProgressApi";
 import { CheckCircle, CheckCircle2, CirclePlay } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -43,30 +43,64 @@ const CourseProgress = () => {
 
   const [currentLecture, setCurrentLecture] = useState(null);
 
+  const watchedSecondsRef = useRef(new Set());
+  const triggeredCompletionsRef = useRef(new Set());
+
+  const courseDetails = data?.data?.courseDetails;
+  const initialLecture =
+    currentLecture || (courseDetails?.lectures && courseDetails.lectures[0]);
+  const activeLectureId = currentLecture?._id || initialLecture?._id;
+
+  // Reset unique watched seconds set when active lecture changes
+  useEffect(() => {
+    watchedSecondsRef.current = new Set();
+  }, [activeLectureId]);
+
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p>Failed to load course details</p>;
 
-  console.log(data);
-
-  const { courseDetails, progress, completed } = data.data;
+  const { progress, completed } = data.data;
   const { courseTitle } = courseDetails;
 
-  // initialze the first lecture is not exist
-  const initialLecture =
-    currentLecture || (courseDetails.lectures && courseDetails.lectures[0]);
-
   const isLectureCompleted = (lectureId) => {
-    return progress.some((prog) => prog.lectureId === lectureId && prog.viewed);
+    return progress ? progress.some((prog) => prog.lectureId === lectureId && prog.viewed) : false;
   };
 
   const handleLectureProgress = async (lectureId) => {
     await updateLectureProgress({ courseId, lectureId });
     refetch();
   };
-  // Handle select a specific lecture to watch
+
+  const handleTimeUpdate = (e) => {
+    const video = e.target;
+    const duration = video.duration;
+    if (!duration || !activeLectureId) return;
+
+    // Check if the lecture is already completed in backend cache
+    const isAlreadyCompleted = isLectureCompleted(activeLectureId);
+    if (isAlreadyCompleted) {
+      triggeredCompletionsRef.current.add(activeLectureId);
+      return;
+    }
+
+    // Skip if we already fired the api for this lecture during this session
+    if (triggeredCompletionsRef.current.has(activeLectureId)) {
+      return;
+    }
+
+    const currentSecond = Math.floor(video.currentTime);
+    watchedSecondsRef.current.add(currentSecond);
+
+    const percentWatched = watchedSecondsRef.current.size / duration;
+    if (percentWatched >= 0.80) {
+      triggeredCompletionsRef.current.add(activeLectureId);
+      handleLectureProgress(activeLectureId);
+    }
+  };
+
+  // Handle select a specific lecture to watch (only updates active lecture state, doesn't mark complete)
   const handleSelectLecture = (lecture) => {
     setCurrentLecture(lecture);
-    handleLectureProgress(lecture._id);
   };
 
 
@@ -82,7 +116,7 @@ const CourseProgress = () => {
       {/* Display course name  */}
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-bold">{courseTitle}</h1>
-        <Button
+        {/* <Button
           onClick={completed ? handleInCompleteCourse : handleCompleteCourse}
           variant={completed ? "outline" : "default"}
         >
@@ -93,7 +127,7 @@ const CourseProgress = () => {
           ) : (
             "Mark as completed"
           )}
-        </Button>
+        </Button> */}
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
@@ -104,9 +138,7 @@ const CourseProgress = () => {
               src={currentLecture?.videoUrl || initialLecture?.videoUrl}
               controls
               className="w-full h-auto md:rounded-lg"
-              onPlay={() =>
-                handleLectureProgress(currentLecture?._id || initialLecture?._id)
-              }
+              onTimeUpdate={handleTimeUpdate}
             />
           </div>
           {/* Display current watching lecture title */}
