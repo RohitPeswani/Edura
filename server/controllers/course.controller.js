@@ -1,5 +1,9 @@
+import mongoose from "mongoose";
 import { Course } from "../models/course.model.js";
 import { Lecture } from "../models/lecture.model.js";
+import { CoursePurchase } from "../models/coursePurchase.model.js";
+import { CourseProgress } from "../models/courseProgress.js";
+import { User } from "../models/user.model.js";
 import {deleteMediaFromCloudinary, deleteVideoFromCloudinary, uploadMedia} from "../utils/cloudinary.js";
 
 export const createCourse = async (req,res) => {
@@ -31,28 +35,40 @@ export const createCourse = async (req,res) => {
 
 export const searchCourse = async (req,res) => {
     try {
-        const {query = "", categories = [], sortByPrice =""} = req.query;
-        console.log(categories);
+        const {query = "", categories = "", sortByPrice =""} = req.query;
         
-        // create search query
-        const searchCriteria = {
-            isPublished:true,
-            $or:[
-                {courseTitle: {$regex:query, $options:"i"}},
-                {subTitle: {$regex:query, $options:"i"}},
-                {category: {$regex:query, $options:"i"}},
-            ]
+        let categoriesArray = [];
+        if (categories) {
+            if (Array.isArray(categories)) {
+                categoriesArray = categories;
+            } else if (typeof categories === "string") {
+                categoriesArray = categories.split(",").map(c => c.trim()).filter(Boolean);
+            }
         }
 
-        // if categories selected
-        if(categories.length > 0) {
-            searchCriteria.category = {$in: categories};
+        const searchCriteria = {
+            isPublished: true
+        };
+
+        if (query) {
+            searchCriteria.$or = [
+                { courseTitle: { $regex: query, $options: "i" } },
+                { subTitle: { $regex: query, $options: "i" } },
+                { category: { $regex: query, $options: "i" } },
+            ];
+        }
+
+        if (categoriesArray.length > 0) {
+            const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            searchCriteria.category = {
+                $in: categoriesArray.map(cat => new RegExp(`^\\s*${escapeRegExp(cat)}\\s*$`, "i"))
+            };
         }
 
         // define sorting order
         const sortOptions = {};
         if(sortByPrice === "low"){
-            sortOptions.coursePrice = 1;//sort by price in ascending
+            sortOptions.coursePrice = 1; // sort by price in ascending
         }else if(sortByPrice === "high"){
             sortOptions.coursePrice = -1; // descending
         }
@@ -65,8 +81,11 @@ export const searchCourse = async (req,res) => {
         });
 
     } catch (error) {
-        console.log(error);
-        
+        console.error("Error searching courses:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to search courses"
+        });
     }
 }
 
@@ -340,30 +359,102 @@ export const togglePublishCourse = async (req,res) => {
 }
 
 export const removeCourse = async (req, res) => {
+    const session = await mongoose.startSession();
     try {
         const { courseId } = req.params;
-        const course = await Course.findByIdAndDelete(courseId);
-        if (!course) {
-            return res.status(404).json({
-                message: "Course not found!"
-            });
+        let course;
+        let lecturesList = [];
+
+        // Attempt transaction
+        try {
+            session.startTransaction();
+
+            course = await Course.findById(courseId).session(session);
+            if (!course) {
+                await session.abortTransaction();
+                return res.status(404).json({
+                    message: "Course not found!"
+                });
+            }
+
+            if (course.lectures && course.lectures.length > 0) {
+                lecturesList = await Lecture.find({ _id: { $in: course.lectures } }).session(session);
+                await Lecture.deleteMany({ _id: { $in: course.lectures } }).session(session);
+            }
+
+            await CoursePurchase.deleteMany({ courseId }).session(session);
+            await CourseProgress.deleteMany({ courseId }).session(session);
+            await User.updateMany(
+                { enrolledCourses: courseId },
+                { $pull: { enrolledCourses: courseId } }
+            ).session(session);
+
+            await Course.findByIdAndDelete(courseId).session(session);
+
+            await session.commitTransaction();
+        } catch (txnError) {
+            await session.abortTransaction();
+            // If transactions are not supported by the environment (e.g. standalone local MongoDB)
+            if (txnError.name === "MongoServerError" && (txnError.code === 20 || txnError.message.includes("transaction"))) {
+                console.warn("Transactions not supported by database environment. Falling back to non-transactional cascade delete.");
+                
+                // Fallback non-transactional execution
+                course = await Course.findById(courseId);
+                if (!course) {
+                    return res.status(404).json({
+                        message: "Course not found!"
+                    });
+                }
+
+                if (course.lectures && course.lectures.length > 0) {
+                    lecturesList = await Lecture.find({ _id: { $in: course.lectures } });
+                    await Lecture.deleteMany({ _id: { $in: course.lectures } });
+                }
+
+                await CoursePurchase.deleteMany({ courseId });
+                await CourseProgress.deleteMany({ courseId });
+                await User.updateMany(
+                    { enrolledCourses: courseId },
+                    { $pull: { enrolledCourses: courseId } }
+                );
+
+                await Course.findByIdAndDelete(courseId);
+            } else {
+                throw txnError;
+            }
+        } finally {
+            session.endSession();
         }
 
+        // Post-transaction Cloudinary cleanup (Asynchronous)
         if (course.courseThumbnail) {
-            const publicId = course.courseThumbnail.split("/").pop().split(".")[0];
-            await deleteMediaFromCloudinary(publicId);
+            try {
+                const publicId = course.courseThumbnail.split("/").pop().split(".")[0];
+                deleteMediaFromCloudinary(publicId);
+            } catch (err) {
+                console.error("Failed to delete course thumbnail from Cloudinary:", err);
+            }
         }
 
-        if (course.lectures && course.lectures.length > 0) {
-            await Lecture.deleteMany({ _id: { $in: course.lectures } });
+        if (lecturesList.length > 0) {
+            for (const lecture of lecturesList) {
+                if (lecture.publicId) {
+                    try {
+                        deleteVideoFromCloudinary(lecture.publicId);
+                    } catch (err) {
+                        console.error(`Failed to delete lecture video ${lecture.publicId} from Cloudinary:`, err);
+                    }
+                }
+            }
         }
 
         return res.status(200).json({
             success: true,
-            message: "Course removed successfully."
+            message: "Course and all associated purchases, progress, and media removed successfully."
         });
+
     } catch (error) {
-        console.log(error);
+        console.error("Error during course removal:", error);
         return res.status(500).json({
             message: "Failed to remove course"
         });
