@@ -112,7 +112,7 @@ Edura/
 ├── .gitignore
 └── README.md
 ```
-![Architecture Diagram](screenshots\LMS_Archituecture.png)
+![Architecture Diagram](screenshots/LMS_Archituecture.png)
 
 ---
 
@@ -189,11 +189,11 @@ RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 
 | User Dashboard | Admin Analytics |
 | :---: | :---: |
-| ![Dashboard Placeholder](screenshots\student-dashboard.jpg) | ![Analytics Placeholder](screenshots\Admin-analytics.jpg) |
+| ![Dashboard Placeholder](screenshots/student-dashboard.jpg) | ![Analytics Placeholder](screenshots/Admin-analytics.jpg) |
 
 | Course Details | Video Player & Progress |
 | :---: | :---: |
-| ![Details Placeholder](hscreenshots\course-details.jpg) | ![Progress Placeholder](screenshots\video-progress.jpg) |
+| ![Details Placeholder](screenshots/course-details.jpg) | ![Progress Placeholder](screenshots/video-progress.jpg) |
 
 ---
 
