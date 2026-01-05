@@ -116,18 +116,6 @@ const CourseProgress = () => {
       {/* Display course name  */}
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-bold">{courseTitle}</h1>
-        {/* <Button
-          onClick={completed ? handleInCompleteCourse : handleCompleteCourse}
-          variant={completed ? "outline" : "default"}
-        >
-          {completed ? (
-            <div className="flex items-center">
-              <CheckCircle className="h-4 w-4 mr-2" /> <span>Completed</span>{" "}
-            </div>
-          ) : (
-            "Mark as completed"
-          )}
-        </Button> */}
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">

@@ -107,3 +107,5 @@ public/uploads/
 # ==========================
 .vercel/
 .render/
+server/Dockerfile
+server/.dockerignore
